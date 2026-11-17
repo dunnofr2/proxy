@@ -1,0 +1,26 @@
+{
+  "name": "ultraviolet-proxy",
+  "version": "1.0.0",
+  "description": "Web proxy powered by Ultraviolet, bare-mux, Epoxy, and Wisp",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "dev": "node --watch --env-file-if-exists=.env src/server.js",
+    "test": "node --test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@mercuryworkshop/bare-mux": "^2.1.9",
+    "@mercuryworkshop/epoxy-transport": "^2.1.29",
+    "@mercuryworkshop/libcurl-transport": "^1.5.2",
+    "@mercuryworkshop/wisp-js": "^0.5.3",
+    "@titaniumnetwork-dev/ultraviolet": "^3.2.10",
+    "express": "^5.3.0",
+    "hls.js": "^1.7.4",
+    "nodemailer": "^10.6.0",
+    "ws": "^8.23.0"
+  }
+}

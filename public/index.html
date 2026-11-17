@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simple</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <script src="/lib/core.bundle.js"></script>
+  <script src="/app.cfg.js"></script>
+</head>
+<body>
+  <!-- Animated Black Background -->
+  <div class="bg-stage" aria-hidden="true">
+    <div class="bg-orb bg-orb-a"></div>
+    <div class="bg-orb bg-orb-b"></div>
+  </div>
+  <canvas id="bg-canvas" class="bg-canvas" aria-hidden="true"></canvas>
+
+  <!-- Minimal Mode Switcher (Proxy / Games / AI / Music / Account) -->
+  <nav id="top-nav" class="top-nav" aria-label="Primary navigation">
+    <button class="mode-btn active" type="button" data-view="home">Proxy</button>
+    <button class="mode-btn" type="button" data-view="games">Games</button>
+    <button class="mode-btn" type="button" data-view="ai">AI</button>
+    <button id="music-toggle-btn" class="mode-btn" type="button">Music</button>
+    <span class="nav-divider" aria-hidden="true"></span>
+    <button id="account-btn" class="mode-btn account-nav-btn" type="button">Sign in</button>
+  </nav>
+
+  <!-- Home / Proxy Search View -->
+  <main id="home-view" class="home-view">
+    <div class="home-box">
+      <h1 class="simple-title">Simple</h1>
+
+      <form id="home-form" class="search-form" autocomplete="off">
+        <input
+          id="search-input"
+          class="search-input"
+          type="text"
+          spellcheck="false"
+          autocomplete="off"
+          autocapitalize="off"
+          autofocus
+          placeholder="Search or enter a URL..."
+          aria-label="Search or enter a URL"
+        />
+        <button class="search-btn" type="submit">Go</button>
+      </form>
+
+      <div class="engine-row" role="group" aria-label="Search engine">
+        <button class="engine-btn active" type="button" data-engine="ddg_html">DuckDuckGo</button>
+        <button class="engine-btn" type="button" data-engine="brave">Brave</button>
+        <button class="engine-btn" type="button" data-engine="google">Google</button>
+        <button class="engine-btn" type="button" data-engine="bing">Bing</button>
+      </div>
+
+      <div class="status-line hidden">
+        <span id="status-dot" class="status-dot"></span>
+        <span id="status-text">Connecting...</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- Games Catalog View -->
+  <section id="games-view" class="games-view hidden" aria-label="Games library">
+    <div class="games-inner">
+      <div class="games-header">
+        <div>
+          <h2 class="games-heading">Games</h2>
+          <span id="games-count" class="games-count">Loading catalog...</span>
+        </div>
+        <div class="games-controls">
+          <button id="games-fav-filter" class="engine-btn" type="button" title="Show saved favorites only">★ Favorites</button>
+          <input
+            id="games-filter"
+            class="games-filter"
+            type="text"
+            spellcheck="false"
+            autocomplete="off"
+            placeholder="Search games..."
+            aria-label="Search games"
+          />
+        </div>
+      </div>
+
+      <div id="games-status" class="games-status">Fetching zones.json...</div>
+      <div id="games-grid" class="games-grid"></div>
+    </div>
+  </section>
+
+  <!-- AI Assistant View -->
+  <section id="ai-view" class="ai-view hidden" aria-label="AI assistant">
+    <div class="ai-shell">
+      <aside id="ai-sidebar" class="ai-sidebar" aria-label="Chat history">
+        <div class="ai-sidebar-head">
+          <button id="ai-new-btn" class="ai-new-btn" type="button">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            New chat
+          </button>
+        </div>
+        <div id="ai-convo-list" class="ai-convo-list"></div>
+      </aside>
+
+      <div class="ai-main">
+        <header class="ai-header">
+          <button id="ai-sidebar-toggle" class="tool-btn ai-sidebar-toggle" type="button" aria-label="Toggle chat history">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <div id="ai-title" class="ai-title">New chat</div>
+          <select id="ai-model-select" class="ai-model-select" aria-label="Model">
+            <option value="deepseek/deepseek-v4.1-flash">DeepSeek V4.1 Flash</option>
+          </select>
+        </header>
+
+        <div id="ai-messages" class="ai-messages" aria-live="polite">
+        </div>
+
+        <div class="ai-composer">
+          <div id="ai-locked" class="ai-locked hidden">
+            <span>Sign in to chat and keep your conversations.</span>
+            <button id="ai-signin-btn" class="auth-primary-btn" type="button">Sign in</button>
+          </div>
+
+          <form id="ai-form" class="ai-form" autocomplete="off">
+            <textarea id="ai-input" class="ai-input" rows="1" maxlength="8000"
+              placeholder="Message AI..." aria-label="Message the AI"></textarea>
+            <button id="ai-send-btn" class="ai-send-btn" type="submit" aria-label="Send message">
+              <svg class="ai-icon-send" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 19V5M5 12l7-7 7 7" />
+              </svg>
+              <svg class="ai-icon-stop" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                <rect x="5" y="5" width="14" height="14" rx="2.5" />
+              </svg>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Active Proxy Browser View -->
+  <section id="browser-view" class="browser-view hidden" aria-label="Proxied browser">
+    <header class="toolbar">
+      <div class="toolbar-group">
+        <button id="back-btn" class="tool-btn" type="button" title="Back">&#8592;</button>
+        <button id="forward-btn" class="tool-btn" type="button" title="Forward">&#8594;</button>
+        <button id="reload-btn" class="tool-btn" type="button" title="Reload">&#8635;</button>
+      </div>
+
+      <form id="bar-form" class="bar-form" autocomplete="off">
+        <input
+          id="address-bar"
+          class="address-bar"
+          type="text"
+          spellcheck="false"
+          autocomplete="off"
+          placeholder="Search or enter a URL..."
+          aria-label="Address bar"
+        />
+      </form>
+
+      <div class="toolbar-group">
+        <button id="popout-btn" class="tool-btn" type="button" title="Open in new tab">&#8599;</button>
+        <button id="home-btn" class="tool-btn" type="button" title="Close">&#10005;</button>
+      </div>
+    </header>
+
+    <div class="frame-wrap">
+      <div id="loading-line" class="loading-line hidden"></div>
+      <iframe id="proxy-frame" class="proxy-frame" title="Simple Proxy Viewport"></iframe>
+    </div>
+  </section>
+
+  <!-- Active Game Player View -->
+  <section id="game-player-view" class="browser-view hidden" aria-label="Game viewport">
+    <header class="toolbar">
+      <div class="toolbar-group">
+        <button id="game-back-btn" class="tool-btn tool-btn-wide" type="button">&#8592; Games</button>
+      </div>
+      <div id="game-title-label" class="game-title-label">Loading...</div>
+      <div class="toolbar-group">
+        <button id="game-reload-btn" class="tool-btn" type="button" title="Reload Game">&#8635;</button>
+        <button id="game-fullscreen-btn" class="tool-btn" type="button" title="Fullscreen">&#9974;</button>
+      </div>
+    </header>
+
+    <div id="game-frame-wrap" class="frame-wrap game-frame-wrap">
+      <div id="game-loading" class="game-loading hidden">Loading game...</div>
+    </div>
+  </section>
+
+  <!-- SoundCloud Music Widget (Moveable) -->
+  <aside id="music-panel" class="music-panel hidden" aria-label="SoundCloud music player">
+    <div id="music-bg-art" class="music-bg-art" aria-hidden="true"></div>
+    <div class="music-surface">
+      <div id="music-drag-handle" class="music-head" title="Drag to move (double-click to reset)">
+        <div class="music-head-left">
+          <svg class="music-grip" viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true">
+            <circle cx="5" cy="4" r="1.2" />
+            <circle cx="11" cy="4" r="1.2" />
+            <circle cx="5" cy="8" r="1.2" />
+            <circle cx="11" cy="8" r="1.2" />
+            <circle cx="5" cy="12" r="1.2" />
+            <circle cx="11" cy="12" r="1.2" />
+          </svg>
+          <span class="music-brand">Music</span>
+        </div>
+
+        <div class="music-tabs" role="tablist">
+          <button id="music-tab-search-btn" class="music-tab active" type="button" data-mtab="search">Search</button>
+          <button id="music-tab-saved-btn" class="music-tab" type="button" data-mtab="saved">Saved</button>
+          <button id="music-tab-lyrics-btn" class="music-tab" type="button" data-mtab="lyrics">Lyrics</button>
+        </div>
+
+        <button id="music-close-btn" class="music-icon-btn" type="button" title="Minimize" aria-label="Minimize music widget">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M5 12h14" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Search Sub-View -->
+      <div id="music-view-search" class="music-subview">
+        <form id="music-form" class="music-form" autocomplete="off">
+          <input
+            id="music-input"
+            class="music-input"
+            type="text"
+            spellcheck="false"
+            placeholder="Search SoundCloud..."
+            aria-label="Search SoundCloud tracks"
+          />
+          <button class="music-search-btn" type="submit">Go</button>
+        </form>
+        <div id="music-status" class="music-status">Search any song or artist on SoundCloud.</div>
+        <div id="music-list" class="music-list"></div>
+      </div>
+
+      <!-- Saved Sub-View -->
+      <div id="music-view-saved" class="music-subview hidden">
+        <div id="music-saved-empty" class="music-status">No saved tracks yet. Click ♥ on any track.</div>
+        <div id="music-saved-list" class="music-list"></div>
+      </div>
+
+      <!-- Apple Music-Style Lyrics Sub-View -->
+      <div id="music-view-lyrics" class="music-subview music-lyrics-view hidden">
+        <div id="music-lyrics-status" class="music-lyrics-empty">Play a track to view synced lyrics.</div>
+        <div id="music-lyrics-scroll" class="music-lyrics-scroll hidden"></div>
+        <button id="music-lyrics-resync" class="music-resync-btn hidden" type="button">Resync</button>
+      </div>
+
+      <!-- Now Playing Deck -->
+      <div class="music-controls">
+        <div class="music-now">
+          <div class="music-art-wrap">
+            <img id="music-now-art" class="music-now-art hidden" alt="" />
+            <div id="music-art-fallback" class="music-art-fallback">♪</div>
+          </div>
+          <div class="music-now-meta">
+            <div id="music-now-title" class="music-now-title">Nothing playing</div>
+            <div id="music-now-artist" class="music-now-artist">SoundCloud</div>
+          </div>
+          <button id="music-lyrics-shortcut" class="music-icon-btn" type="button" title="Toggle Lyrics">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 6h16M4 12h10M4 18h14" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="music-seek-row">
+          <span id="music-time-current" class="music-time">0:00</span>
+          <input id="music-seek" class="music-seek" type="range" min="0" max="100" step="0.25" value="0" aria-label="Seek track" />
+          <span id="music-time-total" class="music-time">0:00</span>
+        </div>
+
+        <div class="music-transport-row">
+          <div class="music-vol-wrap">
+            <button id="music-mute-btn" class="music-icon-btn" type="button" title="Mute / Unmute" aria-label="Mute">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+              </svg>
+            </button>
+            <input id="music-volume" class="music-volume" type="range" min="0" max="1" step="0.02" value="0.85" aria-label="Volume" />
+          </div>
+
+          <div class="music-btns">
+            <button id="music-prev-btn" class="music-icon-btn" type="button" title="Previous" aria-label="Previous track">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor">
+                <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
+              </svg>
+            </button>
+            <button id="music-play-btn" class="music-play-btn" type="button" title="Play" aria-label="Play or pause">
+              <svg id="music-play-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </button>
+            <button id="music-next-btn" class="music-icon-btn" type="button" title="Next" aria-label="Next track">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor">
+                <path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Minimized Music Pill -->
+  <div id="music-mini" class="music-mini hidden">
+    <img id="music-mini-art" class="music-mini-art hidden" alt="" />
+    <button id="music-mini-title" class="music-mini-title" type="button" title="Expand music widget">Now playing</button>
+    <button id="music-mini-play" class="music-icon-btn" type="button" title="Play / Pause">
+      <svg id="music-mini-icon" viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
+        <path d="M8 5v14l11-7z" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Account Modal (Email OTP) -->
+  <div id="account-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="account-modal-title">
+    <div class="modal-card">
+      <button id="account-close-btn" class="music-icon-btn modal-close" type="button" aria-label="Close account modal">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M18 6L6 18M6 6l12 12" />
+        </svg>
+      </button>
+
+      <!-- Step 1: Email -->
+      <div id="auth-step-email" class="auth-step">
+        <h2 id="account-modal-title" class="auth-title">Sign in to Simple</h2>
+        <p class="auth-subtitle">Enter your email and we’ll send you a 6-digit verification code.</p>
+        <form id="auth-email-form" class="auth-form" autocomplete="on">
+          <input
+            id="auth-email-input"
+            class="auth-input"
+            type="email"
+            required
+            placeholder="you@example.com"
+            autocomplete="email"
+            aria-label="Email address"
+          />
+          <button id="auth-send-btn" class="auth-primary-btn" type="submit">Send Code</button>
+        </form>
+      </div>
+
+      <!-- Step 2: 6-digit OTP Code -->
+      <div id="auth-step-code" class="auth-step hidden">
+        <h2 class="auth-title">Check your email</h2>
+        <p id="auth-code-subtitle" class="auth-subtitle">Enter the 6-digit code.</p>
+
+        <div id="auth-dev-banner" class="auth-dev-banner hidden">
+          <span>Dev preview (no SMTP set): <strong id="auth-dev-code">000000</strong></span>
+          <button id="auth-dev-fill" class="auth-link-btn" type="button">Fill</button>
+        </div>
+
+        <form id="auth-code-form" class="auth-form" autocomplete="off">
+          <input
+            id="auth-code-input"
+            class="auth-input auth-code-input"
+            type="text"
+            inputmode="numeric"
+            pattern="\d{6}"
+            maxlength="6"
+            required
+            placeholder="000000"
+            autocomplete="one-time-code"
+            aria-label="6-digit verification code"
+          />
+          <button id="auth-verify-btn" class="auth-primary-btn" type="submit">Verify &amp; Sign In</button>
+        </form>
+
+        <div class="auth-actions-row">
+          <button id="auth-resend-btn" class="auth-link-btn" type="button">Resend code</button>
+          <button id="auth-change-email" class="auth-link-btn" type="button">Use another email</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Signed-In Profile -->
+      <div id="auth-step-profile" class="auth-step hidden">
+        <div class="auth-profile-head">
+          <div id="auth-avatar" class="auth-avatar">S</div>
+          <div class="auth-profile-meta">
+            <div class="auth-email-row">
+              <div id="auth-profile-email" class="auth-profile-email">—</div>
+              <span id="auth-owner-badge" class="owner-badge hidden">OWNER</span>
+            </div>
+            <div id="auth-profile-since" class="auth-profile-since">—</div>
+          </div>
+        </div>
+
+        <div class="auth-pfp-controls">
+          <input id="auth-pfp-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="hidden" />
+          <button id="auth-pfp-upload-btn" class="auth-secondary-btn" type="button">Upload PFP</button>
+          <button id="auth-pfp-remove-btn" class="auth-secondary-btn hidden" type="button">Remove</button>
+        </div>
+
+        <form id="auth-profile-form" class="auth-inline-form">
+          <input id="auth-name-input" class="auth-input" type="text" maxlength="40" placeholder="Display name" aria-label="Display name" />
+          <button class="auth-secondary-btn" type="submit">Save</button>
+        </form>
+
+        <div class="auth-stats">
+          <div class="auth-stat">
+            <span>Engine</span>
+            <strong id="auth-stat-engine">—</strong>
+          </div>
+          <div class="auth-stat">
+            <span>Fav Games</span>
+            <strong id="auth-stat-games">0</strong>
+          </div>
+          <div class="auth-stat">
+            <span>Saved Tracks</span>
+            <strong id="auth-stat-tracks">0</strong>
+          </div>
+        </div>
+
+        <div class="auth-actions-row">
+          <button id="auth-logout-btn" class="auth-secondary-btn" type="button">Sign out</button>
+          <button id="auth-delete-btn" class="auth-danger-btn" type="button">Delete account</button>
+        </div>
+      </div>
+
+      <div id="auth-error" class="auth-error hidden" role="alert"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>
