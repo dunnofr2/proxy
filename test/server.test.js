@@ -11,7 +11,7 @@ import { createChatService } from "../src/chat.js";
 import { createAiStore } from "../src/ai-store.js";
 import { getConfiguredDeliveryMode } from "../src/mailer.js";
 import { WebSocket as WsClient } from "ws";
-import { resolveInputToUrl } from "../public/js/url.js";
+import { getDirectYouTubeVideoUrl, resolveInputToUrl } from "../public/js/url.js";
 import {
   COVERS_BASES,
   HTML_BASES,
@@ -288,6 +288,33 @@ test("resolveInputToUrl distinguishes search queries, filenames, and URLs", () =
     resolveInputToUrl("https://example.com/a?b=1", "ddg_html"),
     "https://example.com/a?b=1"
   );
+});
+
+test("getDirectYouTubeVideoUrl detects direct video URLs and ignores search/home pages", () => {
+  assert.equal(
+    getDirectYouTubeVideoUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ"),
+    "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+  );
+  assert.equal(
+    getDirectYouTubeVideoUrl("https://m.youtube.com/watch?v=abc123&t=45s"),
+    "https://m.youtube.com/watch?v=abc123&t=45s"
+  );
+  assert.equal(
+    getDirectYouTubeVideoUrl("https://www.youtube.com/shorts/xyz789"),
+    "https://www.youtube.com/shorts/xyz789"
+  );
+  assert.equal(
+    getDirectYouTubeVideoUrl("https://www.youtube.com/live/live123"),
+    "https://www.youtube.com/live/live123"
+  );
+  assert.equal(
+    getDirectYouTubeVideoUrl("https://youtu.be/dQw4w9WgXcQ?t=10"),
+    "https://youtu.be/dQw4w9WgXcQ?t=10"
+  );
+  assert.equal(getDirectYouTubeVideoUrl("https://www.youtube.com/"), null);
+  assert.equal(getDirectYouTubeVideoUrl("https://www.youtube.com/results?search_query=music"), null);
+  assert.equal(getDirectYouTubeVideoUrl("https://www.youtube.com/playlist?list=PL123"), null);
+  assert.equal(getDirectYouTubeVideoUrl("https://example.com/watch?v=123"), null);
 });
 
 test("gn-math games helpers filter playable zones and resolve cover/HTML URLs", () => {
