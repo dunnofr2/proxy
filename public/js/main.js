@@ -4,7 +4,7 @@ const loadTransport = async () => {
   return mod.BareMuxConnection;
 };
 let TransportConnection = null;
-import { getDirectYouTubeVideoUrl, resolveInputToUrl } from "./url.js";
+import { resolveInputToUrl } from "./url.js";
 import {
   COVERS_BASES,
   fetchGameHtml,
@@ -258,113 +258,9 @@ function decodeFrameUrl() {
   return "";
 }
 
-const hookedFrameDocs = new WeakSet();
-let lastDirectYouTubeUrl = "";
-let lastDirectYouTubeAt = 0;
-
-function openDirectYouTubeUrl(url) {
-  lastDirectYouTubeUrl = url;
-  lastDirectYouTubeAt = Date.now();
-  const popup = window.open(url, "_blank", "noopener");
-  if (!popup) {
-    window.location.assign(url);
-  }
-}
-
-function decodeProxiedOrRelativeUrl(rawHref, baseUrl) {
-  if (!rawHref || typeof rawHref !== "string") return "";
-  const trimmed = rawHref.trim();
-  if (!trimmed || trimmed.startsWith("#") || /^(javascript|data|blob|mailto):/i.test(trimmed)) {
-    return "";
-  }
-  const cfg = self['__uv' + '$config'];
-  try {
-    const resolved = new URL(trimmed, location.origin);
-    if (cfg && resolved.origin === location.origin && resolved.pathname.startsWith(cfg.prefix)) {
-      const rest = resolved.pathname.slice(cfg.prefix.length) + (resolved.search || "");
-      return cfg.decodeUrl(rest) + (resolved.hash || "");
-    }
-  } catch {
-    // Ignore URL parse error and fall through to relative resolution
-  }
-  try {
-    return baseUrl ? new URL(trimmed, baseUrl).href : new URL(trimmed).href;
-  } catch {
-    return "";
-  }
-}
-
-function extractAnchorRealUrl(anchor, frameWindow) {
-  const baseUrl = decodeFrameUrl() || frameWindow?.__uv?.location?.href || "";
-  const candidates = [];
-  try {
-    const attrHref = anchor.getAttribute?.("href");
-    if (attrHref) candidates.push(attrHref);
-  } catch {
-    // Ignore
-  }
-  try {
-    if (anchor.href) candidates.push(anchor.href);
-  } catch {
-    // Ignore
-  }
-  for (const raw of candidates) {
-    const resolved = decodeProxiedOrRelativeUrl(raw, baseUrl);
-    if (resolved) return resolved;
-  }
-  return "";
-}
-
-function attachFrameLinkInterceptor() {
-  try {
-    const frameDoc = els.proxyFrame.contentDocument;
-    const frameWin = els.proxyFrame.contentWindow;
-    if (!frameDoc || hookedFrameDocs.has(frameDoc)) return;
-    hookedFrameDocs.add(frameDoc);
-
-    frameDoc.addEventListener(
-      "click",
-      (e) => {
-        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-        const path = typeof e.composedPath === "function" ? e.composedPath() : [e.target];
-        const anchor =
-          path.find((el) => el?.tagName === "A" && (el.hasAttribute?.("href") || el.href)) ||
-          e.target?.closest?.("a[href]");
-        if (!anchor) return;
-
-        const targetUrl = extractAnchorRealUrl(anchor, frameWin);
-        const directYtUrl = getDirectYouTubeVideoUrl(targetUrl);
-        if (!directYtUrl) return;
-
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        openDirectYouTubeUrl(directYtUrl);
-      },
-      true
-    );
-  } catch {
-    // Ignore transient or non-same-origin document access
-  }
-}
-
 function syncToolbarFromFrame() {
   if (els.browserView.classList.contains("hidden")) return;
-  attachFrameLinkInterceptor();
   const decoded = decodeFrameUrl();
-  const directYtUrl = getDirectYouTubeVideoUrl(decoded);
-  if (
-    directYtUrl &&
-    (directYtUrl !== lastDirectYouTubeUrl || Date.now() - lastDirectYouTubeAt > 3000)
-  ) {
-    openDirectYouTubeUrl(directYtUrl);
-    try {
-      els.proxyFrame.contentWindow?.history.back();
-    } catch {
-      // Ignore
-    }
-    return;
-  }
   if (decoded && document.activeElement !== els.addressBar) {
     els.addressBar.value = decoded;
   }
@@ -404,12 +300,6 @@ function switchTopView(viewName) {
 async function navigate(rawInput) {
   const target = resolveInputToUrl(rawInput, activeEngine);
   if (!target) return;
-
-  const directYtUrl = getDirectYouTubeVideoUrl(target);
-  if (directYtUrl) {
-    openDirectYouTubeUrl(directYtUrl);
-    return;
-  }
 
   els.addressBar.value = target;
   els.topNav.classList.add("hidden");
@@ -627,7 +517,6 @@ els.gamesFavFilter?.addEventListener("click", () => {
 
 els.proxyFrame.addEventListener("load", () => {
   els.loadingLine.classList.add("hidden");
-  attachFrameLinkInterceptor();
   syncToolbarFromFrame();
 });
 
