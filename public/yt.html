@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Video Player - Simple</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #090a10;
+      color: #f3f4f6;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      background: rgba(13, 15, 23, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .brand {
+      font-weight: 700;
+      font-size: 15px;
+      color: #fff;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+    .search-form {
+      flex: 1;
+      max-width: 560px;
+      display: flex;
+      gap: 8px;
+    }
+    .search-input {
+      flex: 1;
+      padding: 8px 13px;
+      border-radius: 9px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: #121521;
+      color: #f3f4f6;
+      font-size: 14px;
+      outline: none;
+    }
+    .search-input:focus {
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+    .btn {
+      padding: 8px 14px;
+      border-radius: 9px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: #1a1e2e;
+      color: #f3f4f6;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: #252b40;
+    }
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .player-card {
+      background: #11131e;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .video-wrap {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    video,
+    .embed-frame {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      outline: none;
+      background: #000;
+    }
+    .meta {
+      padding: 16px 20px;
+    }
+    .meta-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .video-title {
+      margin: 0 0 6px;
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+    .video-sub {
+      color: #9ca3af;
+      font-size: 13px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .video-desc {
+      color: #d1d5db;
+      font-size: 13px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      max-height: 110px;
+      overflow-y: auto;
+      margin: 0;
+    }
+    .status-msg {
+      padding: 14px 18px;
+      border-radius: 10px;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      font-size: 14px;
+      margin-bottom: 18px;
+    }
+    .hidden {
+      display: none !important;
+    }
+    .section-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0 0 12px;
+      color: #e5e7eb;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 14px;
+    }
+    .card {
+      background: #11131e;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.12s ease, border-color 0.12s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.24);
+    }
+    .thumb-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #05060a;
+    }
+    .thumb-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .badge {
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      padding: 2px 6px;
+      border-radius: 5px;
+      background: rgba(0, 0, 0, 0.82);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .card-body {
+      padding: 10px 12px;
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #f3f4f6;
+      line-height: 1.35;
+      margin: 0 0 4px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card-meta {
+      font-size: 12px;
+      color: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+  <header class="top-bar">
+    <span class="brand">YouTube Player</span>
+    <form id="yt-search-form" class="search-form" autocomplete="off">
+      <input
+        id="yt-search-input"
+        class="search-input"
+        type="text"
+        placeholder="Search YouTube videos..."
+        aria-label="Search YouTube videos"
+      />
+      <button class="btn" type="submit">Search</button>
+    </form>
+  </header>
+
+  <main class="container">
+    <div id="error-box" class="status-msg hidden"></div>
+
+    <section id="player-section" class="player-card hidden">
+      <div class="video-wrap">
+        <video id="video-el" controls autoplay playsinline></video>
+        <iframe
+          id="embed-el"
+          class="embed-frame hidden"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allowfullscreen
+        ></iframe>
+      </div>
+      <div class="meta">
+        <div class="meta-head">
+          <h1 id="video-title" class="video-title">Loading video...</h1>
+          <button id="toggle-mode-btn" class="btn" type="button">Switch Mode</button>
+        </div>
+        <div id="video-sub" class="video-sub"></div>
+        <p id="video-desc" class="video-desc"></p>
+      </div>
+    </section>
+
+    <section id="results-section" class="hidden">
+      <h2 id="results-heading" class="section-title">Results</h2>
+      <div id="results-grid" class="grid"></div>
+    </section>
+  </main>
+
+  <script type="module">
+    const params = new URLSearchParams(location.search);
+    const initialVideoId = params.get("v") || "";
+    const initialQuery = params.get("q") || "";
+
+    const errorBox = document.getElementById("error-box");
+    const playerSection = document.getElementById("player-section");
+    const videoEl = document.getElementById("video-el");
+    const embedEl = document.getElementById("embed-el");
+    const toggleModeBtn = document.getElementById("toggle-mode-btn");
+    const titleEl = document.getElementById("video-title");
+    const subEl = document.getElementById("video-sub");
+    const descEl = document.getElementById("video-desc");
+    const searchForm = document.getElementById("yt-search-form");
+    const searchInput = document.getElementById("yt-search-input");
+    const resultsSection = document.getElementById("results-section");
+    const resultsHeading = document.getElementById("results-heading");
+    const resultsGrid = document.getElementById("results-grid");
+
+    let activeVideoId = "";
+    let activeMode = "stream";
+
+    function showError(msg) {
+      if (!msg) {
+        errorBox.classList.add("hidden");
+        errorBox.textContent = "";
+        return;
+      }
+      errorBox.textContent = msg;
+      errorBox.classList.remove("hidden");
+    }
+
+    function applyPlaybackMode(mode, cleanId) {
+      activeMode = mode;
+      if (mode === "embed") {
+        videoEl.pause();
+        videoEl.removeAttribute("src");
+        videoEl.classList.add("hidden");
+        embedEl.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(cleanId)}?autoplay=1&rel=0`;
+        embedEl.classList.remove("hidden");
+        toggleModeBtn.textContent = "Use Direct Stream";
+      } else {
+        embedEl.src = "about:blank";
+        embedEl.classList.add("hidden");
+        videoEl.classList.remove("hidden");
+        videoEl.src = `/api/yt/stream/${encodeURIComponent(cleanId)}`;
+        videoEl.play().catch(() => {});
+        toggleModeBtn.textContent = "Use Embed Player";
+      }
+    }
+
+    videoEl.addEventListener("error", () => {
+      if (activeVideoId && activeMode === "stream") {
+        applyPlaybackMode("embed", activeVideoId);
+      }
+    });
+
+    toggleModeBtn.addEventListener("click", () => {
+      if (!activeVideoId) return;
+      applyPlaybackMode(activeMode === "stream" ? "embed" : "stream", activeVideoId);
+    });
+
+    async function loadVideo(videoId, pushHistory = false) {
+      const cleanId = (videoId || "").trim();
+      if (!cleanId) return;
+      activeVideoId = cleanId;
+      showError("");
+
+      if (pushHistory) {
+        const nextUrl = new URL(location.href);
+        nextUrl.searchParams.set("v", cleanId);
+        history.pushState({ v: cleanId }, "", nextUrl);
+      }
+
+      playerSection.classList.remove("hidden");
+      titleEl.textContent = "Loading video...";
+      subEl.textContent = "";
+      descEl.textContent = "";
+
+      try {
+        const res = await fetch(`/api/yt/info/${encodeURIComponent(cleanId)}`);
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data?.error || `Failed to load video (HTTP ${res.status})`);
+        }
+        const v = data.video;
+        document.title = `${v.title} - YouTube`;
+        titleEl.textContent = v.title;
+        const views = v.viewCount ? `${Number(v.viewCount).toLocaleString()} views` : "";
+        subEl.textContent = [v.author, views, v.quality].filter(Boolean).join(" • ");
+        descEl.textContent = v.description || "";
+
+        applyPlaybackMode(v.mode === "embed" ? "embed" : "stream", cleanId);
+
+        if (!resultsGrid.children.length && v.title) {
+          runSearch(v.title, false);
+        }
+      } catch (err) {
+        applyPlaybackMode("embed", cleanId);
+        titleEl.textContent = "YouTube Video";
+      }
+    }
+
+    async function runSearch(query, updateUrl = true) {
+      const trimmed = (query || "").trim();
+      if (!trimmed) return;
+      searchInput.value = trimmed;
+      if (updateUrl) {
+        const nextUrl = new URL(location.href);
+        nextUrl.searchParams.set("q", trimmed);
+        history.replaceState(null, "", nextUrl);
+      }
+
+      resultsSection.classList.remove("hidden");
+      resultsHeading.textContent = `Results for "${trimmed}"`;
+      resultsGrid.textContent = "Searching...";
+
+      try {
+        const res = await fetch(`/api/yt/search?q=${encodeURIComponent(trimmed)}`);
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data?.error || "Search failed");
+        }
+        renderResults(data.videos || []);
+      } catch (err) {
+        resultsGrid.textContent = err?.message || "Search failed.";
+      }
+    }
+
+    function renderResults(videos) {
+      resultsGrid.textContent = "";
+      if (!videos.length) {
+        resultsGrid.textContent = "No videos found.";
+        return;
+      }
+      for (const item of videos) {
+        const card = document.createElement("article");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="thumb-wrap">
+            <img loading="lazy" src="/api/yt/thumb/${encodeURIComponent(item.id)}" alt="" />
+            <span class="badge"></span>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title"></h3>
+            <div class="card-meta"></div>
+          </div>
+        `;
+        card.querySelector(".badge").textContent = item.duration || "";
+        card.querySelector(".card-title").textContent = item.title || "Untitled";
+        card.querySelector(".card-meta").textContent = [item.author, item.views]
+          .filter(Boolean)
+          .join(" • ");
+        card.addEventListener("click", () => {
+          loadVideo(item.id, true);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+        resultsGrid.appendChild(card);
+      }
+    }
+
+    searchForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      runSearch(searchInput.value, true);
+    });
+
+    window.addEventListener("popstate", () => {
+      const p = new URLSearchParams(location.search);
+      const v = p.get("v");
+      if (v) loadVideo(v, false);
+    });
+
+    if (initialVideoId) {
+      loadVideo(initialVideoId, false);
+    }
+    if (initialQuery) {
+      runSearch(initialQuery, false);
+    } else if (!initialVideoId) {
+      runSearch("trending music", false);
+    }
+  </script>
+</body>
+</html>

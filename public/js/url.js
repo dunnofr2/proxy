@@ -117,3 +117,75 @@ export function resolveInputToUrl(rawInput, engineKey = "ddg_html") {
   const engine = SEARCH_ENGINES[engineKey] || SEARCH_ENGINES.ddg_html;
   return engine.template.replace("%s", encodeURIComponent(trimmed));
 }
+
+const YOUTUBE_HOSTS = new Set([
+  "youtube.com",
+  "www.youtube.com",
+  "m.youtube.com",
+  "music.youtube.com",
+  "gaming.youtube.com",
+  "youtu.be",
+  "www.youtu.be",
+  "youtube-nocookie.com",
+  "www.youtube-nocookie.com",
+]);
+
+const VIDEO_ID_RE = /^[a-zA-Z0-9_-]{11}$/;
+
+export function extractYouTubeVideoId(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== "string") return null;
+  let parsed;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
+  const host = parsed.hostname.toLowerCase();
+  if (!YOUTUBE_HOSTS.has(host)) return null;
+
+  if (host === "youtu.be" || host === "www.youtu.be") {
+    const id = parsed.pathname.replace(/^\/+/, "").split("/")[0];
+    return VIDEO_ID_RE.test(id) ? id : null;
+  }
+
+  const path = parsed.pathname;
+  if (path === "/watch" || path === "/watch/") {
+    const id = parsed.searchParams.get("v") || "";
+    return VIDEO_ID_RE.test(id) ? id : null;
+  }
+
+  const match = path.match(/^\/(?:shorts|live|embed|v)\/([a-zA-Z0-9_-]{11})(?:\/|$)/);
+  return match ? match[1] : null;
+}
+
+/**
+ * Maps a YouTube URL (video, search results, or homepage) to the built-in
+ * in-proxy player route (`/yt.html?...`), or `null` for non-YouTube URLs.
+ */
+export function getYouTubePlayerUrl(rawUrl) {
+  const videoId = extractYouTubeVideoId(rawUrl);
+  if (videoId) {
+    return `/yt.html?v=${encodeURIComponent(videoId)}`;
+  }
+  if (!rawUrl || typeof rawUrl !== "string") return null;
+  let parsed;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
+  const host = parsed.hostname.toLowerCase();
+  if (!YOUTUBE_HOSTS.has(host) || host === "youtu.be" || host === "www.youtu.be") {
+    return null;
+  }
+  if (parsed.pathname === "/results") {
+    const q = (parsed.searchParams.get("search_query") || "").trim();
+    return q ? `/yt.html?q=${encodeURIComponent(q)}` : "/yt.html";
+  }
+  if (parsed.pathname === "/" || parsed.pathname === "") {
+    return "/yt.html";
+  }
+  return null;
+}

@@ -15,6 +15,11 @@ import {
   rewriteM3u8,
   searchSoundCloud,
 } from "./soundcloud.js";
+import {
+  isValidYouTubeVideoId,
+  resolveYouTubeVideo,
+  searchYouTubeVideos,
+} from "./youtube.js";
 import { fetchLyrics } from "./lyrics.js";
 import {
   AuthError,
@@ -143,8 +148,8 @@ const SERVICE_BOOTSTRAP_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
-async function proxyMediaStream(targetUrl, req, res) {
-  const headers = {};
+async function proxyMediaStream(targetUrl, req, res, extraHeaders = {}) {
+  const headers = { ...extraHeaders };
   if (req.headers.range) {
     headers.range = req.headers.range;
   }
@@ -550,6 +555,80 @@ export function createProxyApp({
       res.json(result);
     } catch (err) {
       res.status(502).json({ error: err?.message || "Lyrics lookup failed" });
+    }
+  });
+
+  // Built-in YouTube search, metadata, thumbnail, and direct MP4 streaming routes
+  app.get("/api/yt/search", async (req, res) => {
+    const q = String(req.query.q || "").trim();
+    if (!q) {
+      res.status(400).json({ error: "Missing search query parameter q" });
+      return;
+    }
+    try {
+      const videos = await searchYouTubeVideos(q, 18);
+      res.json({ videos });
+    } catch (err) {
+      res.status(502).json({ error: err?.message || "YouTube search failed" });
+    }
+  });
+
+  app.get("/api/yt/info/:id", async (req, res) => {
+    try {
+      const info = await resolveYouTubeVideo(req.params.id);
+      res.json({
+        video: {
+          id: info.id,
+          mode: info.mode,
+          title: info.title,
+          author: info.author,
+          durationSec: info.durationSec,
+          viewCount: info.viewCount,
+          description: info.description,
+          quality: info.quality,
+          embedUrl: info.embedUrl,
+        },
+      });
+    } catch (err) {
+      res.status(502).json({ error: err?.message || "Failed to load YouTube video info" });
+    }
+  });
+
+  app.get("/api/yt/stream/:id", async (req, res) => {
+    try {
+      const info = await resolveYouTubeVideo(req.params.id);
+      if (!info.streamUrl) {
+        res.status(502).json({ error: "Direct stream unavailable for this video; use embed mode." });
+        return;
+      }
+      await proxyMediaStream(info.streamUrl, req, res, {
+        "User-Agent": info.userAgent,
+      });
+    } catch (err) {
+      if (!res.headersSent) {
+        res.status(502).json({ error: err?.message || "YouTube stream failed" });
+      } else {
+        res.end();
+      }
+    }
+  });
+
+  app.get("/api/yt/thumb/:id", async (req, res) => {
+    const id = String(req.params.id || "").trim();
+    if (!isValidYouTubeVideoId(id)) {
+      res.status(400).type("text/plain").send("Invalid video ID");
+      return;
+    }
+    try {
+      await proxyMediaStream(`https://i.ytimg.com/vi/${id}/hqdefault.jpg`, req, res, {
+        "User-Agent": "Mozilla/5.0",
+      });
+    } catch (err) {
+      if (!res.headersSent) {
+        res.status(502).type("text/plain").send(err?.message || "Thumbnail fetch failed");
+      } else {
+        res.end();
+      }
     }
   });
 

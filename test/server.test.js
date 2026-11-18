@@ -11,7 +11,16 @@ import { createChatService } from "../src/chat.js";
 import { createAiStore } from "../src/ai-store.js";
 import { getConfiguredDeliveryMode } from "../src/mailer.js";
 import { WebSocket as WsClient } from "ws";
-import { resolveInputToUrl } from "../public/js/url.js";
+import {
+  extractYouTubeVideoId,
+  getYouTubePlayerUrl,
+  resolveInputToUrl,
+} from "../public/js/url.js";
+import {
+  isAllowedYouTubeMediaUrl,
+  isValidYouTubeVideoId,
+  pickPlayableFormat,
+} from "../src/youtube.js";
 import {
   COVERS_BASES,
   HTML_BASES,
@@ -288,6 +297,38 @@ test("resolveInputToUrl distinguishes search queries, filenames, and URLs", () =
     resolveInputToUrl("https://example.com/a?b=1", "ddg_html"),
     "https://example.com/a?b=1"
   );
+});
+
+test("YouTube helpers map video and search URLs to in-proxy /yt.html player and validate streams", () => {
+  assert.equal(extractYouTubeVideoId("https://www.youtube.com/watch?v=dQw4w9WgXcQ"), "dQw4w9WgXcQ");
+  assert.equal(extractYouTubeVideoId("https://youtu.be/dQw4w9WgXcQ?t=10"), "dQw4w9WgXcQ");
+  assert.equal(extractYouTubeVideoId("https://www.youtube.com/shorts/dQw4w9WgXcQ"), "dQw4w9WgXcQ");
+  assert.equal(extractYouTubeVideoId("https://www.youtube.com/"), null);
+
+  assert.equal(
+    getYouTubePlayerUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ"),
+    "/yt.html?v=dQw4w9WgXcQ"
+  );
+  assert.equal(
+    getYouTubePlayerUrl("https://www.youtube.com/results?search_query=lofi+beats"),
+    "/yt.html?q=lofi%20beats"
+  );
+  assert.equal(getYouTubePlayerUrl("https://www.youtube.com/"), "/yt.html");
+  assert.equal(getYouTubePlayerUrl("https://example.com/watch?v=dQw4w9WgXcQ"), null);
+
+  assert.equal(isValidYouTubeVideoId("dQw4w9WgXcQ"), true);
+  assert.equal(isValidYouTubeVideoId("bad"), false);
+  assert.equal(
+    isAllowedYouTubeMediaUrl("https://rr1---sn-abc.googlevideo.com/videoplayback?id=1"),
+    true
+  );
+  assert.equal(isAllowedYouTubeMediaUrl("https://evil.example.com/video.mp4"), false);
+
+  const picked = pickPlayableFormat([
+    { url: "https://rr1.googlevideo.com/videoplayback", mimeType: "video/mp4", height: 360 },
+    { url: "https://rr1.googlevideo.com/videoplayback", mimeType: "video/mp4", height: 720 },
+  ]);
+  assert.equal(picked?.height, 720);
 });
 
 test("gn-math games helpers filter playable zones and resolve cover/HTML URLs", () => {
