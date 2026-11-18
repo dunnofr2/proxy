@@ -189,17 +189,6 @@ async function ensureProxyReady() {
 
     setStatus("connecting", "Connecting...");
 
-    if (!connection) {
-      if (!TransportConnection) {
-        TransportConnection = await loadTransport();
-      }
-      connection = new TransportConnection("/bm/worker.js");
-    }
-
-    const proto = location.protocol === "https:" ? "wss:" : "ws:";
-    const wispUrl = `${proto}//${location.host}/wisp/`;
-    await connection.setTransport("/net/client.mjs", [{ wisp: wispUrl }]);
-
     const reg = await navigator.serviceWorker.register("/sw.js", {
       scope: uvCfg.prefix,
     });
@@ -223,6 +212,17 @@ async function ensureProxyReady() {
         });
       }
     }
+
+    if (!connection) {
+      if (!TransportConnection) {
+        TransportConnection = await loadTransport();
+      }
+      connection = new TransportConnection("/bm/worker.js");
+    }
+
+    const proto = location.protocol === "https:" ? "wss:" : "ws:";
+    const wispUrl = `${proto}//${location.host}/wisp/`;
+    await connection.setTransport("/net/client.mjs", [{ wisp: wispUrl }]);
 
     setStatus("ready", "Ready");
   })().catch((err) => {
