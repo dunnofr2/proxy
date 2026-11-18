@@ -103,6 +103,13 @@ const SERVICE_BOOTSTRAP_HTML = `<!DOCTYPE html>
         throw new Error("Service Workers require HTTPS or localhost.");
       }
 
+      const ConnClass = await loadMux();
+      const connection = new ConnClass("/bm/worker.js");
+      const wispUrl =
+        localStorage.getItem("uv_wisp_url") ||
+        (location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/wisp/";
+      await connection.setTransport("/net/client.mjs", [{ wisp: wispUrl }]);
+
       const reg = await navigator.serviceWorker.register("/sw.js", {
         scope: __uv$config.prefix,
       });
@@ -125,13 +132,6 @@ const SERVICE_BOOTSTRAP_HTML = `<!DOCTYPE html>
           });
         }
       }
-
-      const ConnClass = await loadMux();
-      const connection = new ConnClass("/bm/worker.js");
-      const wispUrl =
-        localStorage.getItem("uv_wisp_url") ||
-        (location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/wisp/";
-      await connection.setTransport("/net/client.mjs", [{ wisp: wispUrl }]);
       location.reload();
     }
 
@@ -184,12 +184,6 @@ export function createProxyApp({
 } = {}) {
   const app = express();
   app.disable("x-powered-by");
-
-  app.use((_req, res, next) => {
-    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-    res.setHeader("Cross-Origin-Embedder-Policy", "credentialless");
-    next();
-  });
 
   const getSessionToken = (req) => parseCookies(req.headers.cookie)[SESSION_COOKIE_NAME] || "";
   const isSecureReq = (req) =>
